@@ -24,6 +24,12 @@ package edu.kit.formal.modularization;
 
 
 
-public final class Main {
+public final class ModularProver {
 	
+	final boolean areFunctionBlocksEquivalent() {
+		
+		
+		
+		return true;
+	}
 }
