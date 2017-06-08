@@ -1,6 +1,7 @@
 
 /.settings/
 /target/
+/nuXmv/
 
 *.class
 *.classpath

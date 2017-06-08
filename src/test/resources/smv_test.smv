@@ -1,0 +1,27 @@
+MODULE main
+VAR
+	continuous : mContinuous;
+	even       : mEven;
+INVARSPEC
+	(continuous.value = even.value);
+INVARSPEC
+	(!even.toggle -> continuous.value = even.value);
+
+
+MODULE mContinuous
+VAR
+	value : unsigned word[8];
+ASSIGN
+	init(value) := 0ud8_0;
+	next(value) := value + 0ud8_1;
+
+
+MODULE mEven
+VAR
+	toggle : boolean;
+	value  : unsigned word[8];
+ASSIGN
+	init(toggle) := FALSE;
+	init(value)  := 0ud8_0;
+	next(toggle) := !toggle;
+	next(value)  := toggle ? value + 0ud8_2 : value;

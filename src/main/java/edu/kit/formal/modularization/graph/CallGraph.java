@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.kit.iti.formal.automation.datatypes.Any;
+import edu.kit.iti.formal.automation.datatypes.FunctionBlockDataType;
 import edu.kit.iti.formal.automation.scope.LocalScope;
 import edu.kit.iti.formal.automation.st.ast.FunctionBlockDeclaration;
 import edu.kit.iti.formal.automation.st.ast.FunctionCall;
@@ -39,9 +41,10 @@ import edu.kit.iti.formal.automation.st.ast.ProgramDeclaration;
 import edu.kit.iti.formal.automation.st.ast.Statement;
 import edu.kit.iti.formal.automation.st.ast.StatementList;
 import edu.kit.iti.formal.automation.st.ast.TopLevelElement;
+import edu.kit.iti.formal.automation.st.ast.VariableDeclaration;
 import edu.kit.iti.formal.automation.visitors.DefaultVisitor;
 
-public final class CallGraph<N extends CGNode<N, ?>> {
+public final class CallGraph<N extends CGNode<N, ?>> implements Iterable<N> {
 
 	private final class IteratorNode {
 		
@@ -137,8 +140,15 @@ public final class CallGraph<N extends CGNode<N, ?>> {
     	@Override
     	public final Object visit(final FunctionCall fc) {
     		
+    		final VariableDeclaration vd       =
+    			_localScope.getVariable(fc.getFunctionName());
+    		final Any                 dataType = vd.getDataType();
+    		
     		final N calledNode = _nodes.getOrDefault(
-    			_localScope.getVariable(fc.getFunctionName()).getDataTypeName(),
+    			dataType != null ?
+    				((FunctionBlockDataType)dataType).getFunctionBlock().
+    					getFunctionBlockName() :
+    				vd.getDataTypeName(),
     			null);
     		
     		if(calledNode != null) {
@@ -257,6 +267,15 @@ public final class CallGraph<N extends CGNode<N, ?>> {
 	
 	public final boolean is1to1mapping() {
 		return _1to1mapping;
+	}
+
+	@Override
+	public Iterator<N> iterator() {
+		return _nodes.values().iterator();
+	}
+	
+	public final int size() {
+		return _nodes.size();
 	}
 	
 	@Override

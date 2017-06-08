@@ -1,0 +1,25 @@
+MODULE main
+IVAR
+	x : unsigned word[8];
+VAR
+	p1 : mP1(x);
+	p2 : mP2(x);
+INVARSPEC
+	(p1.y = p2.y);
+
+
+	
+MODULE mP1(x)
+VAR
+	y : unsigned word[8];
+ASSIGN
+	init(y) := 0ud8_0;
+	next(y) := 0ud8_3 * x;
+	
+	
+MODULE mP2(x)
+VAR
+	y : unsigned word[8];
+ASSIGN
+	init(y) := 0ud8_0;
+	next(y) := x + x + x;

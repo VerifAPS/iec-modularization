@@ -1,24 +1,26 @@
 package edu.kit.formal.modularization;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
+import java.util.Scanner;
 
-import org.antlr.v4.runtime.ANTLRFileStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Before;
 import org.junit.Test;
 
 import edu.kit.formal.modularization.graph.BiCGNode;
 import edu.kit.formal.modularization.graph.CallGraph;
 import edu.kit.formal.modularization.graph.SimpleCGNode;
-import edu.kit.iti.formal.automation.NiceErrorListener;
-import edu.kit.iti.formal.automation.parser.IEC61131Lexer;
-import edu.kit.iti.formal.automation.parser.IEC61131Parser;
+import edu.kit.iti.formal.automation.IEC61131Facade;
+import edu.kit.iti.formal.automation.SymbExFacade;
 import edu.kit.iti.formal.automation.scope.LocalScope;
 import edu.kit.iti.formal.automation.smv.SymbolicExecutioner;
+import edu.kit.iti.formal.automation.st.StructuredTextPrinter;
+import edu.kit.iti.formal.automation.st.ast.FunctionBlockDeclaration;
+import edu.kit.iti.formal.automation.st.ast.ProgramDeclaration;
 import edu.kit.iti.formal.automation.st.ast.TopLevelElement;
+import edu.kit.iti.formal.automation.st.ast.TopLevelElements;
+import edu.kit.iti.formal.smv.ast.SMVModule;
+
 import org.junit.Assert;
 
 /*-
@@ -49,6 +51,17 @@ public class TestMain {
 	
 	SymbolicExecutioner se;
 	
+	private final TopLevelElements loadSourceFile1(
+			final String fileName) throws IOException {
+		
+		try(final Scanner scanner =
+			new Scanner(getClass().getResourceAsStream(fileName))) {
+			
+			scanner.useDelimiter("\\A");
+			return IEC61131Facade.file(scanner.hasNext() ? scanner.next() : "");
+		}
+	}
+	/*
 	private static final List<TopLevelElement> loadSourceFile(
 			final String fileName) throws IOException {
 		
@@ -71,7 +84,7 @@ public class TestMain {
 		
 		return parser.start().ast;
 	}
-	
+	*/
 	@Before
 	public void setupExecutioner() {
 	    se = new SymbolicExecutioner();
@@ -84,9 +97,9 @@ public class TestMain {
 	public final void biCallGaph() throws IOException {
 		
 		final List<TopLevelElement>       program1 =
-			loadSourceFile("bi_call_graph1.st");
+			loadSourceFile1("/bi_call_graph1.st");
 		final List<TopLevelElement>       program2 =
-			loadSourceFile("bi_call_graph2.st");
+			loadSourceFile1("/bi_call_graph2.st");
 		final CallGraph<BiCGNode<Object>> cg       =
 			CallGraph.create(program1, program2);
 		
@@ -99,7 +112,7 @@ public class TestMain {
 	public final void simpleCallGaph() throws IOException {
 		
 		final List<TopLevelElement>           program =
-			loadSourceFile("simple_call_graph.st");
+			loadSourceFile1("/simple_call_graph.st");
 		final CallGraph<SimpleCGNode<Object>> cg      =
 			CallGraph.create(program);
 		
@@ -109,32 +122,43 @@ public class TestMain {
 	}
 
 	@Test
-	public void simpleTest() throws IOException {
-	    
-		//final StatementList list = loadFunctionBlock("fb_call.st");
+	public final void structuralFBEquivalence() throws IOException {
 		
-		//final StatementList fb1 = loadFunctionBlock("fb2.st");
-		//System.out.println(fb1);
-		//fb1.visit(se);
-		//System.out.println("visit complete");
-		//System.out.println(se.peek());
-		//for(Map.Entry<SVariable, SMVExpr> i : se.peek().entrySet()) {
-		//	System.out.println(i.getValue());
-		//}
+		final TopLevelElement program1 =
+			loadSourceFile1("/structural_equal1.st").get(0);
+		final TopLevelElement program2 =
+			loadSourceFile1("/structural_equal2.st").get(0);
 		
-		//System.out.println(se.peek().toString());
-		//System.out.println(se.peek().toString());
-		
-	    /*
-		StatementList list = IEC61131Facade.statements(
-	            "a := 2;" +
-	                    "c := 3;" +
-	                    "c := a+c;" +
-	                    "b := 2*a+c;");
-	    list.visit(se);
-	    Assert.assertEquals("{a=0sd16_2, b=((0sd16_2*0sd16_2)+(0sd16_2+0sd16_3)), c=(0sd16_2+0sd16_3)}",
-	            se.peek().toString()
-	    );
-	    */
+		Assert.assertTrue(
+			ModularProver.areFunctionBlocksEquivalent(program1, program2));
 	}
+	
+	@Test
+	public final void proverTest() throws IOException {
+		
+		final SMVModule[][] modules = ModularProver.generateSmvFiles(
+			loadSourceFile1("/program1.st"),
+			loadSourceFile1("/program2.st"));
+		
+		for(SMVModule[] i : modules)
+			for(SMVModule j : i) System.out.println(j);
+	}
+    
+    @Test
+    public void testSimplify() throws IOException {
+    	System.out.println("Embed test:");
+    	
+        TopLevelElements toplevels = loadSourceFile1("/embed_test.st");
+        IEC61131Facade.resolveDataTypes(toplevels);
+        
+        final TopLevelElements simpleProgram = SymbExFacade.simplify(
+        	toplevels, (FunctionBlockDeclaration)toplevels.get(1));
+        
+        final ProgramDeclaration decl = (ProgramDeclaration)simpleProgram.get(1);
+        
+        final StructuredTextPrinter stp = new StructuredTextPrinter();
+        
+        decl.visit(stp);
+        System.out.println(stp.getString());
+    }
 }

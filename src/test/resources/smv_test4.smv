@@ -1,0 +1,34 @@
+MODULE main
+IVAR
+	x : unsigned word[16];
+-- end of IVAR
+VAR
+	fb1 : FB_1(x);
+	fb2 : FB_2(x);
+-- end of VAR
+INVARSPEC
+	fb1.Y1 = fb2.Y1;
+
+ASSIGN
+
+-- end of module main
+
+MODULE FB_1(x)
+VAR
+	Y1 : unsigned word[16];
+-- end of VAR
+ASSIGN
+	init(Y1) := 0ud16_0;
+	next(Y1) := x + 0sd16_5;
+
+-- end of module FB_1
+
+MODULE FB_2(x)
+VAR
+	Y1 : unsigned word[16];
+-- end of VAR
+ASSIGN
+	init(Y1) := 0ud16_0;
+	next(Y1) := x + 0sd16_3;
+
+-- end of module FB_2
